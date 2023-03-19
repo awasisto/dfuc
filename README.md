@@ -4,8 +4,8 @@ dfuc - DNS Forwarding using Cloudflare
 dfuc (pronounced "the f*ck?") is a DNS forwarding service that forwards DNS requests to trusted DNS servers via
 Cloudflare WARP to protect against DNS spoofing by ISPs.
 
-Running
-=======
+Usage
+=====
 
 1. Clone the repository
 
@@ -43,8 +43,6 @@ Running
    ```
 
    dfuc uses AdGuard DNS `94.140.14.14,94.140.15.15` by default. You can specify your preferred DNS servers by setting
-   the `DNS` environment variable using the `-e` option. Here are some popular DNS servers you can choose:
-   - Cloudflare: `1.1.1.1,1.0.0.1`
-   - Google: `8.8.8.8,8.8.4.4`
-   - OpenDNS (Cisco): `208.67.222.222,208.67.220.220`
-   - Quad9: `9.9.9.9,149.112.112.112`
+   the `DNS` environment variable using the `-e` option.
+
+5. On the device you want to use the DNS service, set its DNS server to the IP address of the machine running dfuc
