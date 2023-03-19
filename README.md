@@ -37,7 +37,6 @@ Usage
      -p 53:53/udp \
      -v /lib/modules:/lib/modules \
      --sysctl net.ipv4.conf.all.src_valid_mark=1 \
-     --sysctl net.ipv6.conf.all.disable_ipv6=0 \
      --restart unless-stopped \
      dfuc
    ```
