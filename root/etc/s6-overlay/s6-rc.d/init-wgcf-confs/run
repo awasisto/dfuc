@@ -1,0 +1,43 @@
+#!/usr/bin/with-contenv bash
+
+cd /config
+
+if [ ! -f wg0.conf ]; then
+    OS_ARCH=$(dpkg --print-architecture | awk -F- '{ print $NF }')
+
+    case ${OS_ARCH} in
+    *86)
+        FILE_KEYWORD='linux_386'
+        ;;
+    amd64)
+        FILE_KEYWORD='linux_amd64'
+        ;;
+    arm64)
+        FILE_KEYWORD='linux_arm64'
+        ;;
+    arm*)
+        FILE_KEYWORD='linux_armv7'
+        ;;
+    *)
+        echo -e "ERROR Unsupported architecture: ${OS_ARCH}"
+        exit 1
+        ;;
+    esac
+
+    echo "Downloading wgcf..."
+    curl -fsSL -o /app/wgcf https://github.com/ViRb3/wgcf/releases/download/v2.2.15/wgcf_2.2.15_${FILE_KEYWORD}
+
+    chmod +x /app/wgcf
+
+    echo "Registering Cloudflare WARP..."
+    /app/wgcf register --accept-tos
+
+    echo "Generating WireGuard profile..."
+    /app/wgcf generate
+
+    cp wgcf-profile.conf wg0.conf
+
+    sed -i "s/DNS = 1.1.1.1/DNS = ${DNS}/" wg0.conf
+    sed -i '/\[Interface\]/a PostUp = DROUTE=$(ip route | grep default | awk '\''{print $3}'\''); HOMENET=192.168.0.0/16; HOMENET2=10.0.0.0/8; HOMENET3=172.16.0.0/12; ip route add $HOMENET3 via $DROUTE;ip route add $HOMENET2 via $DROUTE; ip route add $HOMENET via $DROUTE;iptables -I OUTPUT -d $HOMENET -j ACCEPT;iptables -A OUTPUT -d $HOMENET2 -j ACCEPT; iptables -A OUTPUT -d $HOMENET3 -j ACCEPT;  iptables -A OUTPUT ! -o %i -m mark ! --mark $(wg show %i fwmark) -m addrtype ! --dst-type LOCAL -j REJECT' wg0.conf
+    sed -i '/\[Interface\]/a PreDown = HOMENET=192.168.0.0/16; HOMENET2=10.0.0.0/8; HOMENET3=172.16.0.0/12; ip route del $HOMENET3 via $DROUTE;ip route del $HOMENET2 via $DROUTE; ip route del $HOMENET via $DROUTE; iptables -D OUTPUT ! -o %i -m mark ! --mark $(wg show %i fwmark) -m addrtype ! --dst-type LOCAL -j REJECT; iptables -D OUTPUT -d $HOMENET -j ACCEPT; iptables -D OUTPUT -d $HOMENET2 -j ACCEPT; iptables -D OUTPUT -d $HOMENET3 -j ACCEPT' wg0.conf
+fi
