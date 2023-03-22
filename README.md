@@ -44,4 +44,5 @@ Usage
    dfuc uses AdGuard DNS `94.140.14.14,94.140.15.15` by default. You can specify your preferred DNS servers by setting
    the `DNS` environment variable using the `-e` option.
 
-5. On the device you want to use the DNS service, set its DNS server to the IP address of the machine running dfuc
+5. On the device you want to use the DNS service provided by dfuc, set its DNS server to the IP address of the machine
+   running dfuc
