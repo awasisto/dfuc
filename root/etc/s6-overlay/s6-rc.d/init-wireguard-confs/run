@@ -2,12 +2,9 @@
 # shellcheck shell=bash
 # shellcheck disable=SC2016,SC1091,SC2183
 
-# prepare symlinks
-rm -rf /etc/wireguard
-mkdir -p /etc/wireguard
-ln -s /config/wg0.conf /etc/wireguard/wg0.conf
+mkdir -p /config/wg_confs
 
-if [ ! -f /config/wg0.conf ]; then
+if [ ! -f /config/wg_confs/wgcf-profile.conf ]; then
     OS_ARCH=$(dpkg --print-architecture | awk -F- '{ print $NF }')
 
     case ${OS_ARCH} in
@@ -30,11 +27,11 @@ if [ ! -f /config/wg0.conf ]; then
     esac
 
     echo "Downloading wgcf..."
-    curl -fsSL -o /app/wgcf https://github.com/ViRb3/wgcf/releases/download/v2.2.15/wgcf_2.2.15_${FILE_KEYWORD}
+    curl -fsSL -o /app/wgcf https://github.com/ViRb3/wgcf/releases/download/v2.2.21/wgcf_2.2.21_${FILE_KEYWORD}
 
     chmod +x /app/wgcf
 
-    cd /config
+    cd /config/wg_confs
 
     echo "Registering Cloudflare WARP..."
     /app/wgcf register --accept-tos
@@ -42,18 +39,18 @@ if [ ! -f /config/wg0.conf ]; then
     echo "Generating WireGuard profile..."
     /app/wgcf generate
 
-    cp wgcf-profile.conf wg0.conf
-
-    sed -i '/AllowedIPs = ::\/0/s/^/#/' wg0.conf
-    sed -i '/Address = .*:.*:.*:.*:.*:.*:.*:.*\/128/s/^/#/' wg0.conf
-    sed -i "s/DNS = 1.1.1.1/DNS = ${DNS}/" wg0.conf
-    sed -i '/\[Interface\]/a PostUp = DROUTE=$(ip route | grep default | awk '\''{print $3}'\''); HOMENET=192.168.0.0/16; HOMENET2=10.0.0.0/8; HOMENET3=172.16.0.0/12; ip route add $HOMENET3 via $DROUTE;ip route add $HOMENET2 via $DROUTE; ip route add $HOMENET via $DROUTE;iptables -I OUTPUT -d $HOMENET -j ACCEPT;iptables -A OUTPUT -d $HOMENET2 -j ACCEPT; iptables -A OUTPUT -d $HOMENET3 -j ACCEPT;  iptables -A OUTPUT ! -o %i -m mark ! --mark $(wg show %i fwmark) -m addrtype ! --dst-type LOCAL -j REJECT' wg0.conf
-    sed -i '/\[Interface\]/a PreDown = HOMENET=192.168.0.0/16; HOMENET2=10.0.0.0/8; HOMENET3=172.16.0.0/12; ip route del $HOMENET3 via $DROUTE;ip route del $HOMENET2 via $DROUTE; ip route del $HOMENET via $DROUTE; iptables -D OUTPUT ! -o %i -m mark ! --mark $(wg show %i fwmark) -m addrtype ! --dst-type LOCAL -j REJECT; iptables -D OUTPUT -d $HOMENET -j ACCEPT; iptables -D OUTPUT -d $HOMENET2 -j ACCEPT; iptables -D OUTPUT -d $HOMENET3 -j ACCEPT' wg0.conf
+    sed -i '/AllowedIPs = ::\/0/s/^/#/' wgcf-profile.conf
+    sed -i '/Address = .*:.*:.*:.*:.*:.*:.*:.*\/128/s/^/#/' wgcf-profile.conf
+    sed -i "s/DNS = 1.1.1.1/DNS = ${DNS1},${DNS2}/" wgcf-profile.conf
+    sed -i "s/Endpoint = engage.cloudflareclient.com:2408/Endpoint = $(dig +short engage.cloudflareclient.com | head -n 1):2408/" wgcf-profile.conf
+    sed -i '/\[Interface\]/a PostUp = DROUTE=$(ip route | grep default | awk '\''{print $3}'\''); HOMENET=192.168.0.0/16; HOMENET2=10.0.0.0/8; HOMENET3=172.16.0.0/12; ip route add $HOMENET3 via $DROUTE;ip route add $HOMENET2 via $DROUTE; ip route add $HOMENET via $DROUTE;iptables -I OUTPUT -d $HOMENET -j ACCEPT;iptables -A OUTPUT -d $HOMENET2 -j ACCEPT; iptables -A OUTPUT -d $HOMENET3 -j ACCEPT;  iptables -A OUTPUT ! -o %i -m mark ! --mark $(wg show %i fwmark) -m addrtype ! --dst-type LOCAL -j REJECT' wgcf-profile.conf
+    sed -i '/\[Interface\]/a PreDown = HOMENET=192.168.0.0/16; HOMENET2=10.0.0.0/8; HOMENET3=172.16.0.0/12; ip route del $HOMENET3 via $DROUTE;ip route del $HOMENET2 via $DROUTE; ip route del $HOMENET via $DROUTE; iptables -D OUTPUT ! -o %i -m mark ! --mark $(wg show %i fwmark) -m addrtype ! --dst-type LOCAL -j REJECT; iptables -D OUTPUT -d $HOMENET -j ACCEPT; iptables -D OUTPUT -d $HOMENET2 -j ACCEPT; iptables -D OUTPUT -d $HOMENET3 -j ACCEPT' wgcf-profile.conf
 fi
 
 # set up CoreDNS
 if [[ ! -f /config/coredns/Corefile ]]; then
     cp /defaults/Corefile /config/coredns/Corefile
+    sed -i "s|/etc/resolv.conf|${DNS1} ${DNS2}|" /config/coredns/Corefile
 fi
 
 # permissions

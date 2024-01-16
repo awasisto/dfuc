@@ -32,7 +32,8 @@ Usage
      --name=dfuc \
      --cap-add=NET_ADMIN \
      --cap-add=SYS_MODULE \
-     -e DNS=<your_preferred_dns_1>,<your_preferred_dns_2> `#optional` \
+     -e DNS1=<your_preferred_dns_1> `#optional` \
+     -e DNS2=<your_preferred_dns_2> `#optional` \
      -p 53:53/tcp \
      -p 53:53/udp \
      -v /lib/modules:/lib/modules \
@@ -41,8 +42,8 @@ Usage
      dfuc
    ```
 
-   dfuc uses AdGuard DNS `94.140.14.14,94.140.15.15` by default. You can specify your preferred DNS servers by setting
-   the `DNS` environment variable using the `-e` option.
+   dfuc uses AdGuard DNS `94.140.14.14` and `94.140.15.15` by default. You can specify your preferred DNS servers by setting
+   the `DNS1` and `DNS2` environment variables using the `-e` option.
 
 5. On the device you want to use the DNS service provided by dfuc, set its DNS server to the IP address of the machine
    running dfuc
